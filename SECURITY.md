@@ -1,0 +1,2 @@
+# Security policy
+Do not publish vulnerabilities, credentials, customer data or exploit traces in public issues. Contact the repository maintainer privately through GitHub's private vulnerability reporting if enabled, or request a private contact channel without including sensitive details. Include affected version, minimal synthetic reproduction and impact. Never test against third-party systems without authorization.
