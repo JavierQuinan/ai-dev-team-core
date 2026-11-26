@@ -4,6 +4,7 @@ from pathlib import Path
 import unittest
 
 from jsonschema import Draft202012Validator, FormatChecker
+from core_semantics import check_packet
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = json.loads((ROOT / "schemas/candidate-v0.1.json").read_text(encoding="utf-8"))
@@ -20,12 +21,6 @@ def fixture(name):
     return json.loads((ROOT / "tests/fixtures" / name).read_text(encoding="utf-8"))
 
 
-def check_freeze(packet):
-    contract = packet["contract"]
-    if contract["freezeState"] == "frozen" and contract["unresolvedDecisions"]:
-        raise ValueError("unresolved material decision")
-
-
 class ContractTests(unittest.TestCase):
     def test_schema_is_valid(self):
         Draft202012Validator.check_schema(SCHEMA)
@@ -33,13 +28,13 @@ class ContractTests(unittest.TestCase):
     def test_valid_packet(self):
         packet = fixture("task-packet.valid.json")
         validator("TaskPacket").validate(packet)
-        check_freeze(packet)
+        check_packet(packet)
 
     def test_false_freeze(self):
         packet = fixture("task-packet.false-freeze.json")
         validator("TaskPacket").validate(packet)
         with self.assertRaises(ValueError):
-            check_freeze(packet)
+            check_packet(packet)
 
     def test_unknown_field(self):
         packet = fixture("task-packet.valid.json")
