@@ -15,14 +15,22 @@ class ContractError(ValueError):
 
 def canonical_path(value):
     # Restrictive portable path subset; no glob, traversal, drive or UNC aliases.
-    if not value or value.startswith("/") or re.search(r'[\\:*?"<>|\x00-\x1f]', value):
+    if not isinstance(value, str) or not value or value.startswith("/") or re.search(r'[\\:*?"<>|\x00-\x1f]', value):
         raise ContractError("unsafe repository path")
     parts = value.split("/")
     if any(p in ("", ".", "..") or p.endswith((" ", ".")) for p in parts):
         raise ContractError("noncanonical repository path")
+    if any(p.casefold() == ".git" for p in parts):
+        raise ContractError("repository metadata is outside task ownership")
     if any(p.split(".")[0].casefold() in {"con", "prn", "aux", "nul", *(f"com{i}" for i in range(1, 10)), *(f"lpt{i}" for i in range(1, 10))} for p in parts):
         raise ContractError("reserved repository path")
     return tuple(unicodedata.normalize("NFC", p).casefold() for p in PurePosixPath(value).parts)
+
+
+def exact_path(value):
+    """Validate portable syntax, but preserve spelling for declared access scope."""
+    canonical_path(value)
+    return tuple(value.split("/"))
 
 
 def overlaps(a, b):
@@ -41,6 +49,8 @@ def check_packet(packet):
 
 def check_graph(packets):
     """Return deterministic topological order; reject unordered access conflicts."""
+    if not packets:
+        raise ContractError("empty task graph")
     by_id = {p["id"]: p for p in packets}
     if len(by_id) != len(packets):
         raise ContractError("duplicate task id")
@@ -80,11 +90,11 @@ def check_graph(packets):
 def check_result(packet, result):
     if packet["id"] != result["taskId"]:
         raise ContractError("result task mismatch")
-    writes = [canonical_path(e["path"]) for e in packet["contract"]["ownership"] if e["mode"] == "WRITE"]
-    reads = [canonical_path(e["path"]) for e in packet["contract"]["ownership"]]
+    writes = [exact_path(e["path"]) for e in packet["contract"]["ownership"] if e["mode"] == "WRITE"]
+    reads = [exact_path(e["path"]) for e in packet["contract"]["ownership"]]
     for paths, allowed in ((result["changedPaths"], writes), (result["readPaths"], reads)):
         for path in paths:
-            p = canonical_path(path)
+            p = exact_path(path)
             if not any(p[:len(root)] == root for root in allowed):
                 raise ContractError("reported path outside declared ownership")
     check_evidence(result)
