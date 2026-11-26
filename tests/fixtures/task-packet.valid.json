@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "0.1.0-draft",
+  "id": "task-1",
+  "runId": "run-1",
+  "agentRole": "frontend-engineer",
+  "contract": {
+    "objective": "Update synthetic profile screen",
+    "scope": [
+      "src/ui"
+    ],
+    "stableDecisions": [
+      "GET /profile returns name"
+    ],
+    "unresolvedDecisions": [],
+    "dependencies": [],
+    "ownership": [
+      {
+        "path": "src/ui",
+        "mode": "WRITE",
+        "owner": "frontend-engineer"
+      }
+    ],
+    "expectedOutput": "Synthetic UI patch",
+    "constraints": [
+      "No network"
+    ],
+    "stopConditions": [
+      "Unexpected shared interface change"
+    ],
+    "freezeState": "frozen"
+  },
+  "acceptanceCriteria": [
+    "Render profile name"
+  ],
+  "tokenBudget": 5000,
+  "requiresApproval": false
+}
