@@ -106,6 +106,22 @@ class SemanticTests(unittest.TestCase):
         with self.assertRaises(ContractError):
             check_result(a, result)
 
+    def test_case_alias_is_not_authorized(self):
+        a = self.packet()
+        result = {"taskId": a["id"], "changedPaths": ["SRC/UI/index.ts"], "readPaths": [],
+                  "evidence": [], "findings": [], "status": "completed", "blockers": []}
+        with self.assertRaises(ContractError):
+            check_result(a, result)
+
+    def test_metadata_paths_rejected(self):
+        for path in (".git/config", "nested/.GIT/hooks", None):
+            with self.subTest(path=path), self.assertRaises(ContractError):
+                canonical_path(path)
+
+    def test_empty_graph_rejected(self):
+        with self.assertRaises(ContractError):
+            check_graph([])
+
     def test_approval_scope_expiry_actor(self):
         now = datetime(2026, 11, 26, tzinfo=timezone.utc)
         a = {"runId": "run-1", "actor": "maintainer", "decision": "approved",
